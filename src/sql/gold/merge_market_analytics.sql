@@ -1,9 +1,9 @@
 MERGE INTO ANALYTICS_DB.DWH.GOLD_MARKET_ANALYTICS t
 USING (
     SELECT
-        city,
-        district,
-        property_type,
+        COALESCE(city, 'Unknown') AS city,
+        COALESCE(district, 'Unknown') AS district,
+        COALESCE(property_type, 'Unknown') AS property_type,
         AVG(price) AS avg_price,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price) AS median_price,
         MIN(price) AS min_price,
@@ -15,9 +15,9 @@ USING (
     FROM STAGING_DB.CLEANED.SILVER_REAL_ESTATE
     WHERE data_quality_score >= {min_quality_score}
     AND price > 0
-    GROUP BY city, district, property_type
+    GROUP BY COALESCE(city, 'Unknown'), COALESCE(district, 'Unknown'), COALESCE(property_type, 'Unknown')
 ) s
-ON t.city = s.city AND COALESCE(t.district, '') = COALESCE(s.district, '') AND COALESCE(t.property_type, '') = COALESCE(s.property_type, '')
+ON t.city = s.city AND t.district = s.district AND t.property_type = s.property_type
 WHEN MATCHED THEN UPDATE SET
     avg_price = s.avg_price,
     median_price = s.median_price,

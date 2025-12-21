@@ -1,7 +1,7 @@
 MERGE INTO ANALYTICS_DB.DWH.GOLD_PRICE_TRENDS t
 USING (
     SELECT
-        city,
+        COALESCE(city, 'Unknown') AS city,
         TO_VARCHAR(posted_date, 'YYYY-MM') AS year_month,
         AVG(price) AS avg_price,
         AVG(CASE WHEN area > 0 THEN price / area END) AS avg_price_per_sqm,
@@ -10,7 +10,7 @@ USING (
     WHERE data_quality_score >= {min_quality_score}
     AND price > 0
     AND posted_date IS NOT NULL
-    GROUP BY city, TO_VARCHAR(posted_date, 'YYYY-MM')
+    GROUP BY COALESCE(city, 'Unknown'), TO_VARCHAR(posted_date, 'YYYY-MM')
 ) s
 ON t.city = s.city AND t.year_month = s.year_month
 WHEN MATCHED THEN UPDATE SET

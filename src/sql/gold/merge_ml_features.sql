@@ -28,6 +28,7 @@ USING (
     FROM STAGING_DB.CLEANED.SILVER_REAL_ESTATE
     WHERE data_quality_score >= {min_quality_score}
     AND price > 0
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY data_quality_score DESC) = 1
 ) s
 ON t.id = s.id
 WHEN MATCHED THEN UPDATE SET
