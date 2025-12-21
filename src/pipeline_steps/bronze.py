@@ -34,12 +34,13 @@ def insert_batch(batch):
     return len(batch)
 
 
-def load_to_bronze(timeout_seconds=60):
+def load_to_bronze(timeout_seconds=60, reset_offset=True):
     """
     Consume messages from Kafka and load to Snowflake Bronze layer.
 
     Args:
         timeout_seconds: Maximum time to wait for messages
+        reset_offset: If True, seek to beginning of topic to reprocess all messages
 
     Returns:
         Total number of records loaded
@@ -51,6 +52,16 @@ def load_to_bronze(timeout_seconds=60):
 
     logger.info(f"Starting Bronze loader - consuming from topic '{TOPIC_NAME}'")
     logger.info(f"Sinking to Snowflake BRONZE_REAL_ESTATE table (batch size: {BATCH_SIZE})")
+
+    # Force partition assignment by polling once
+    consumer.poll(timeout_ms=1000)
+
+    # Seek to beginning to reprocess all messages
+    if reset_offset:
+        partitions = consumer.assignment()
+        if partitions:
+            consumer.seek_to_beginning(*partitions)
+            logger.info(f"Reset consumer offset to beginning for {len(partitions)} partition(s)")
 
     batch = []
     total_count = 0
