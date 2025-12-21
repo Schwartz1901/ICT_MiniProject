@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(nslookup:*)",
+      "Bash(openssl s_client:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

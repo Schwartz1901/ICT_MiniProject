@@ -1,14 +1,15 @@
+"""
+Ingestion Layer - MongoDB to Kafka Producer
+
+Reads documents from MongoDB in batches and produces them to Kafka
+for downstream processing in the Medallion architecture.
+"""
+
 import json
 import logging
 from kafka_client.config import get_producer, TOPIC_NAME
-from mongo.config import get_collection, close_connection
+from mongo.config import get_collection, close_connection as close_mongo
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 100
@@ -52,17 +53,22 @@ def produce_to_kafka():
         logger.info(f"Batch {batch_num}: produced {batch_count} documents (total: {total_count})")
 
     logger.info(f"Successfully produced {total_count} documents to Kafka in {batch_num} batches")
+    return total_count
 
 
-if __name__ == "__main__":
+def run():
+    """Run ingestion pipeline step."""
     producer = None
     try:
+        logger.info("Starting MongoDB to Kafka ingestion...")
         producer = get_producer()
-        produce_to_kafka()
+        count = produce_to_kafka()
+        logger.info("Ingestion completed successfully")
+        return count
     except Exception as e:
-        logger.error(f"Error producing to Kafka: {e}", exc_info=True)
+        logger.error(f"Error in ingestion: {e}", exc_info=True)
+        raise
     finally:
-        close_connection()
+        close_mongo()
         if producer:
             producer.close()
-        logger.info("Connections closed")
