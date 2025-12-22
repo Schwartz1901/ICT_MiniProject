@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS ANALYTICS_DB.ML_RESULTS.PRICE_PREDICTIONS (
     prediction_error_pct FLOAT,
     model_version VARCHAR,
     model_type VARCHAR,
-    features_used VARIANT,
+    features_used VARCHAR,
     predicted_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
     PRIMARY KEY (id, model_version)
 )

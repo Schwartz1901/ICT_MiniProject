@@ -3,10 +3,11 @@ CREATE TABLE IF NOT EXISTS ANALYTICS_DB.ML_RESULTS.MODEL_REGISTRY (
     model_name VARCHAR,
     model_version VARCHAR,
     model_type VARCHAR,
-    training_date TIMESTAMP_NTZ,
-    metrics VARIANT,
-    parameters VARIANT,
-    status VARCHAR DEFAULT 'active',
+    training_date TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    metrics VARCHAR,
+    parameters VARCHAR,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+    updated_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
     PRIMARY KEY (model_id)
 )

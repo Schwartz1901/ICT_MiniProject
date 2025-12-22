@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS ANALYTICS_DB.ML_RESULTS.FEATURE_IMPORTANCE (
     model_version VARCHAR,
+    model_type VARCHAR,
     feature_name VARCHAR,
     importance_score FLOAT,
     rank INT,

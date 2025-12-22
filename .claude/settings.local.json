@@ -5,7 +5,8 @@
       "Bash(git add:*)",
       "Bash(nslookup:*)",
       "Bash(openssl s_client:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,3 +3,7 @@ pymongo[srv]
 certifi
 snowflake-connector-python
 python-dotenv
+scikit-learn
+pandas
+numpy
+joblib
