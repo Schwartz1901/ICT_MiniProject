@@ -30,6 +30,40 @@ def run_snowflake_setup():
     run_full_setup()
 
 
+def run_cleanup():
+    """Clean up all Snowflake databases, tables, and data."""
+    logger.info("=" * 60)
+    logger.info("CLEANUP: Dropping all databases and tables")
+    logger.info("=" * 60)
+
+    from snowflake_client.config import get_connection, close_connection
+    from sql import load_query
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Execute cleanup SQL statements one by one
+        cleanup_sql = load_query("setup", "cleanup_all")
+        statements = [s.strip() for s in cleanup_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+
+        for statement in statements:
+            if statement:
+                try:
+                    logger.info(f"Executing: {statement[:60]}...")
+                    cursor.execute(statement)
+                except Exception as e:
+                    logger.warning(f"Statement failed (may not exist): {e}")
+
+        cursor.close()
+        logger.info("Cleanup completed successfully")
+    except Exception as e:
+        logger.error(f"Cleanup failed: {e}", exc_info=True)
+        raise
+    finally:
+        close_connection()
+
+
 def run_ingestion():
     """Run MongoDB to Kafka ingestion."""
     logger.info("=" * 60)
@@ -161,6 +195,7 @@ Examples:
   python pipeline_orchestrator.py --full --skip-ingestion   # Skip MongoDB→Kafka
   python pipeline_orchestrator.py --transform               # Run transformations only
   python pipeline_orchestrator.py --setup                   # Setup Snowflake only
+  python pipeline_orchestrator.py --cleanup                 # Drop all databases and tables
   python pipeline_orchestrator.py --step ingestion          # Run single step
         """
     )
@@ -168,6 +203,7 @@ Examples:
     parser.add_argument("--full", action="store_true", help="Run complete pipeline")
     parser.add_argument("--transform", action="store_true", help="Run transformations only (Silver→Gold→ML)")
     parser.add_argument("--setup", action="store_true", help="Run Snowflake setup only")
+    parser.add_argument("--cleanup", action="store_true", help="Drop all databases, tables, and data (DESTRUCTIVE)")
     parser.add_argument("--skip-ingestion", action="store_true", help="Skip ingestion step")
     parser.add_argument("--bronze-timeout", type=int, default=60, help="Bronze loader timeout in seconds")
     parser.add_argument(
@@ -178,7 +214,14 @@ Examples:
 
     args = parser.parse_args()
 
-    if args.setup:
+    if args.cleanup:
+        # Confirm before cleanup
+        confirm = input("WARNING: This will DELETE ALL databases, tables, and data. Type 'yes' to confirm: ")
+        if confirm.lower() == 'yes':
+            run_cleanup()
+        else:
+            logger.info("Cleanup cancelled")
+    elif args.setup:
         run_snowflake_setup()
     elif args.full:
         run_full_pipeline(skip_ingestion=args.skip_ingestion, bronze_timeout=args.bronze_timeout)

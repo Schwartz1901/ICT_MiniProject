@@ -180,6 +180,16 @@ python pipeline_orchestrator.py --full --bronze-timeout 120
 
 Default timeout is 60 seconds.
 
+### Cleanup All Data
+
+To drop all databases, tables, and data:
+
+```bash
+python pipeline_orchestrator.py --cleanup
+```
+
+**Warning:** This is destructive and requires confirmation. Type `yes` when prompted.
+
 ## CLI Reference
 
 | Command                              | Description                          |
@@ -187,6 +197,7 @@ Default timeout is 60 seconds.
 | `--full`                             | Run complete pipeline                |
 | `--transform`                        | Run transformations only             |
 | `--setup`                            | Run Snowflake setup only             |
+| `--cleanup`                          | Drop all databases and tables        |
 | `--step <name>`                      | Run single step                      |
 | `--skip-ingestion`                   | Skip MongoDB → Kafka step            |
 | `--bronze-timeout <seconds>`         | Set bronze loader timeout            |
