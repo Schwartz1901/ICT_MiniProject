@@ -10,7 +10,7 @@ import os
 import json
 import logging
 import threading
-from queue import Queue, Empty
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 from kafka_client.config import get_consumer, TOPIC_NAME
@@ -98,8 +98,6 @@ def load_to_bronze(timeout_seconds=60, reset_offset=True):
     Returns:
         Total number of records loaded
     """
-    import time
-
     consumer = get_consumer()
     create_bronze_table()
 
@@ -107,15 +105,27 @@ def load_to_bronze(timeout_seconds=60, reset_offset=True):
     logger.info(f"Sinking to Snowflake BRONZE_REAL_ESTATE table (batch size: {BATCH_SIZE})")
     logger.info(f"Using {NUM_WORKERS} worker threads for parallel inserts")
 
-    # Force partition assignment by polling once
-    consumer.poll(timeout_ms=1000)
+    # Wait for partition assignment (consumer group join can take a few seconds)
+    partitions = set()
+    max_wait = 30  # seconds
+    wait_start = time.time()
+    while not partitions and (time.time() - wait_start) < max_wait:
+        consumer.poll(timeout_ms=1000)
+        partitions = consumer.assignment()
+        if not partitions:
+            logger.info("Waiting for partition assignment...")
+
+    if not partitions:
+        logger.error("Failed to get partition assignment")
+        consumer.close()
+        return 0
+
+    logger.info(f"Assigned to {len(partitions)} partition(s)")
 
     # Seek to beginning to reprocess all messages
     if reset_offset:
-        partitions = consumer.assignment()
-        if partitions:
-            consumer.seek_to_beginning(*partitions)
-            logger.info(f"Reset consumer offset to beginning for {len(partitions)} partition(s)")
+        consumer.seek_to_beginning(*partitions)
+        logger.info(f"Reset consumer offset to beginning for {len(partitions)} partition(s)")
 
     # Collect all batches first (Kafka consumer is not thread-safe)
     all_batches = []
